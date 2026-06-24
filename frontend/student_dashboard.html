@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeFlow | Student Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* ======================================= */
+        /* 1. Global & Color Setup */
+        /* ======================================= */
+        :root {
+            --primary-blue: #004AAD;
+            --accent-teal: #00BCD4;
+            --success-green: #4CAF50;
+            --warning-orange: #FF9800;
+            --light-grey: #F4F6F9;
+            --text-dark: #212121;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            margin: 0; 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--light-grey); 
+            color: var(--text-dark); 
+            overflow-x: hidden;
+        }
+
+        /* ======================================= */
+        /* 2. Login Page Styles */
+        /* ======================================= */
+        #login-container {
+            height: 100vh;
+            display: flex;
+            position: fixed; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 100;
+            background-color: var(--light-grey);
+            transition: opacity 0.5s ease-out; 
+        }
+        .branding-section {
+            flex: 1.5;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #002D62 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .branding-content { z-index: 10; text-align: center; padding: 40px; }
+        .logo-text {
+            font-size: 4rem; font-weight: 800; letter-spacing: -2px;
+            animation: logoFadeIn 1s ease-out 0.5s forwards; opacity: 0;
+        }
+        @keyframes logoFadeIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .form-section { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .login-box {
+            width: 90%; max-width: 420px; padding: 50px; background: white;
+            border-radius: 16px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            opacity: 0; transform: translateY(30px);
+            animation: formSlideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.8s forwards; 
+        }
+        @keyframes formSlideIn { to { opacity: 1; transform: translateY(0); } }
+        h1 { margin-bottom: 10px; font-size: 2rem; color: var(--text-dark); }
+        .subtitle { margin-bottom: 30px; color: #757575; font-size: 1rem; }
+        .input-group { position: relative; margin-bottom: 30px; }
+        input {
+            width: 100%; padding: 15px 0 10px 0; border: none; border-bottom: 2px solid #ddd; 
+            font-size: 1rem; color: var(--text-dark); outline: none; background: none;
+        }
+        .input-underline {
+            position: absolute; bottom: 0; left: 0; height: 2px; width: 0; 
+            background-color: var(--primary-blue); transition: width 0.3s ease-out;
+        }
+        input:focus + .input-underline { width: 100%; }
+        label {
+            position: absolute; top: 15px; left: 0; color: #757575; font-size: 1rem; 
+            transition: all 0.3s ease; pointer-events: none;
+        }
+        input:focus ~ label, 
+        input:not(:placeholder-shown) ~ label { top: -5px; font-size: 0.8rem; color: var(--primary-blue); }
+        .login-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 8px;
+            background-color: var(--primary-blue); color: white; font-size: 1.1rem;
+            font-weight: 600; cursor: pointer; box-shadow: 0 5px 15px rgba(0, 74, 173, 0.3);
+            transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
+        }
+        .login-btn:hover { background-color: #0056b3; box-shadow: 0 8px 20px rgba(0, 74, 173, 0.4); }
+        .login-btn:active { transform: scale(0.98); }
+        .forgot-link {
+            display: block; text-align: center; margin-top: 30px; color: var(--primary-blue);
+            text-decoration: none; font-size: 0.9rem; transition: color 0.3s;
+        }
+        .forgot-link:hover { color: var(--accent-teal); }
+
+        /* ======================================= */
+        /* 3. Dashboard Styles (Visual & Layout) */
+        /* ======================================= */
+        #dashboard-layout { 
+            /* Make dashboard visible by default (login removed) */
+            display: flex; 
+            min-height: 100vh; 
+            flex-direction: row;
+        }
+        .sidebar { 
+            width: 170px; background-color: var(--primary-blue); color: white; padding: 8px 0px; 
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); position: fixed; height: 100%; z-index: 20;
+            transition: transform 0.25s ease; 
+        }
+        
+        /* Sidebar Active Link Style */
+        .nav-link a { display: block; padding: 12px 20px; color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: background-color 0.3s; }
+        .nav-link a:hover { background-color: rgba(0, 0, 0, 0.2); }
+        .nav-link.active a {
+            background-color: rgba(255, 255, 255, 0.15); 
+            color: white;
+            font-weight: 600;
+            border-left: 4px solid var(--accent-teal); 
+            padding-left: 16px; 
+        }
+
+        .content-area { flex-grow: 10; margin-left: 170px; }
+        .top-bar { padding: 15px 30px; background: white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--accent-teal); margin-left: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; }
+        .user-info { display: flex; align-items: center; }
+
+        /* Better spacing control and use of CSS variables */
+/* Modified .main-content for a better dashboard grid layout */
+     .main-content {
+            padding: 30px; display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        /* Quick action styles in the top bar */
+        .top-actions { display: flex; align-items: center; gap: 12px; }
+        .search-input { padding: 8px 12px; border-radius: 12px; border: 1px solid #e0e0e0; width: 220px; font-size: 0.95rem; }
+        .action-btn { background: var(--accent-teal); color: white; padding: 8px 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; box-shadow: 0 6px 18px rgba(0, 188, 212, 0.15); }
+        .action-btn.secondary { background: white; color: var(--primary-blue); border: 1px solid rgba(0, 74, 173, 0.08); box-shadow: none; }
+
+        /* Slightly stronger card load animation for UX */
+        .dashboard-card { animation: cardPopUp 0.45s ease forwards; }
+        
+        /* Dashboard Card Styles (3D Lift) */
+        .dashboard-card {
+            background: white; padding: 30px; border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05),
+                        0 0 0 1px rgba(0, 0, 0, 0.05); 
+            min-height: 150px; display: flex; flex-direction: column; justify-content: space-between;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s; 
+            cursor: pointer;
+            
+            /* Initial state for Staggered Load Animation (Dashboard specific) */
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+        .dashboard-card:hover { 
+            transform: translateY(-8px) scale(1.0); 
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15), 
+                        0 0 0 1px rgba(0, 0, 0, 0.05); 
+        }
+
+        /* Subject cards don't need the initial animation state */
+        .subject-card {
+            opacity: 1 !important;
+            transform: none !important;
+        }
+        
+        /* Table Styling for Detailed Views */
+        .data-table {
+            width: 100%; border-collapse: collapse; margin-top: 20px;
+            font-size: 0.95rem;
+        }
+        .data-table th, .data-table td {
+            padding: 12px 15px; border-bottom: 1px solid #eeeeee; text-align: left;
+        }
+        .data-table th {
+            background-color: var(--primary-blue); color: white; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .data-table tbody tr:hover {
+            background-color: #f0f8ff;
+        }
+        .grade-a { color: var(--success-green); font-weight: 700; }
+        .grade-b { color: var(--accent-teal); font-weight: 700; }
+        .grade-c { color: var(--warning-orange); font-weight: 700; }
+        .attendance-high { color: var(--success-green); font-weight: 600; }
+        .attendance-low { color: var(--warning-orange); font-weight: 600; }
+
+
+        .card-title { font-size: 1.1rem; font-weight: 600; color: #555; margin-bottom: 10px; }
+        .card-value { font-size: 2.5rem; font-weight: 700; }
+
+        /* Animated Progress Ring Styles */
+        .progress-ring { 
+            width: 150px; height: 150px; border-radius: 50%; position: relative; 
+            margin: 20px auto 10px; background: #e0e0e0; 
+        }
+        .progress-ring-circle {
+            width: 100%; height: 100%; border-radius: 50%; position: absolute; top: 0; left: 0;
+        }
+        .progress-ring-inner { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 120px; height: 120px; background: white; border-radius: 50%; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .ring-value { font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; }
+        .ring-label { font-size: 0.9rem; color: #757575; }
+
+        /* Animations */
+        @keyframes cardPopUp {
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes pulse-alert {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 768px) {
+            /* Hide sidebar by default on small screens */
+            body:not(.sidebar-collapsed) .sidebar { transform: translateX(-110%); }
+            body.sidebar-collapsed .sidebar { transform: translateX(0); }
+            .branding-section { display: none; }
+            #login-container { background-color: white; }
+            .form-section { flex: 1; }
+            .login-box { box-shadow: none; padding: 30px; max-width: none; }
+            .content-area { margin-left: 0; }
+            .sidebar { width: 100%; height: 60px; position: relative; padding: 0; display: flex; justify-content: center; align-items: center; }
+            .sidebar nav { display: none; }
+            .main-content { padding: 15px; grid-template-columns: 1fr; gap: 15px; }
+            .dashboard-card { grid-column: span 1 !important; padding: 20px; }
+            /* Compact spacing for small screens */
+            .main-content { gap: 12px; }
+            .dashboard-card { padding: 14px; min-height: 100px; }
+            /* View fixes */
+            #subjects-view, #grades-view, #attendance-view, #fees-view { padding: 15px !important; }
+        }
+        /* Dark mode variables */
+        body.dark-mode { --primary-blue: #0b3b5a; --accent-teal: #26c6da; --light-grey: #0f1720; --text-dark: #e6eef6; }
+        body.dark-mode .sidebar { background-color: var(--primary-blue); }
+    </style>
+</head>
+<body>
+
+    
+
+    <!-- 2. Dashboard Container (Visible after Login) -->
+    <div id="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar"> 
+            <div style="font-size: 1.3rem; font-weight: 500; padding: 0 5px 10px; text-align: center;">GradeFlow</div>
+            <nav>
+                <ul style="list-style: none; padding: 0;">
+                    <li class="nav-link active" data-view="dashboard-view"><a href="#">Dashboard</a></li>
+                    <li class="nav-link" data-view="subjects-view"><a href="#">Subjects & Assignments</a></li>
+                    <li class="nav-link" data-view="grades-view"><a href="#">Grades & Results</a></li>
+                    <li class="nav-link" data-view="attendance-view"><a href="#">Attendance</a></li>
+                    <li class="nav-link" data-view="fees-view"><a href="#">Fees & Billing</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            
+            <header class="top-bar">
+                <div class="welcome-text">
+                    <!-- Hindi/Hinglish welcome text retained here as per previous request -->
+                    <h2 style="margin: 0; font-weight: 600;">Welcome  <span id="welcome-user-name">User</span></h2>
+                    <div style="color: #666; font-size: 0.95rem; margin-top: 4px;">Here's your activity snapshot and quick actions.</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-btn" aria-label="Toggle menu" title="Menu" style="display:none; background:transparent; border:none; color:var(--primary-blue); font-size:1.3rem;">☰</button>
+
+                    <div class="top-actions">
+                        <input class="search-input" id="dashboard-search" placeholder="Search subjects, assignments..." />
+                        <button class="action-btn" id="submit-assignment-btn">Submit Assignment</button>
+                        <button class="action-btn secondary" id="pay-fees-btn">Pay Fees</button>
+                    </div>
+
+                    <div class="user-info">
+                        <span style="font-weight: 500; color: var(--primary-blue);">Student</span>
+                        <!-- Updated with ID for dynamic initials replacement -->
+                        <div class="avatar" id="user-avatar-initials">US</div>
+                    </div>
+
+                    <!-- Dark mode toggle & Logout -->
+                    <button id="dark-mode-toggle" title="Toggle dark mode" style="background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px;border-radius:8px;cursor:pointer;">🌙</button>
+                    <button id="logout-btn" title="Logout" style="background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px;border-radius:8px;cursor:pointer;color:var(--primary-blue);font-weight:600;">Logout</button>
+                </div>
+            </header>
+
+            <!-- View Container -->
+            <div id="view-container"> 
+                
+                <!-- View 1: Dashboard (Initial Content) -->
+                <div id="dashboard-view">
+                    <!-- Main Content (Dashboard Grid) -->
+                    <div class="main-content">
+                        
+                        <!-- Card 1: CGPA Hero Card -->
+                        <div class="dashboard-card cgpa-card" >
+                            <div class="card-title">Current CGPA (Focus Area)</div>
+                            
+                            <div class="progress-ring">
+                                <div class="progress-ring-circle" id="cgpa-ring"></div>
+                                <div class="progress-ring-inner">
+                                    <div class="ring-value" id="cgpa-value">--</div> 
+                                    <div class="ring-label">CGPA</div>
+                                </div>
+                            </div>
+                            
+                            <p id="cgpa-status-text" style="text-align: center; margin: 0; font-size: 0.9rem; color: #757575;">Loading performance status...</p>
+                        </div>
+
+                        <!-- Card 2: Attendance Summary -->
+                        <div class="dashboard-card attendance-card">
+                            <div class="card-title">Overall Attendance</div>
+                            <div class="card-value" id="attendance-value">--%</div> 
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--accent-teal);">View detailed subject breakdown.</p>
+                        </div>
+
+                        <!-- Card 3: Fees Status (Refined with Pulse) -->
+                        <div class="dashboard-card fees-card">
+                            <div class="card-title">Fees Status</div>
+                            
+                            <div class="progress-ring" style="width: 120px; height: 120px; margin: 10px auto 10px;">
+                                <div class="progress-ring-circle" id="fees-ring"></div>
+                                <div class="progress-ring-inner" style="width: 90px; height: 90px;">
+                                    <div class="ring-value" id="fees-percent-value" style="font-size: 1.8rem; color: var(--accent-teal);">--%</div> 
+                                    <div class="ring-label">Paid</div>
+                                </div>
+                            </div>
+
+                            <div style="text-align: center;">
+                                <p id="fees-pending-text" 
+                                style="margin: 5px 0 0; font-size: 0.9rem; color: var(--warning-orange); font-weight: 600;">
+                                    Loading pending amount...
+                                </p>
+                                
+                               
+        <a target="_blank" href="payment.html" style="text-decoration: none; display: block; width: 100%; text-align: center;">
+    <button class="login-btn" 
+            style="width: 80%; padding: 10px 15px; font-size: 1rem; margin-top: 15px; background-color: var(--warning-orange); box-shadow: 0 5px 15px rgba(255, 152, 0, 0.4); cursor: pointer; border: none; border-radius: 5px;">
+        Pay Now
+    </button>
+</a>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Upcoming Assignment -->
+                        <div class="dashboard-card deadline-card" style="background-color: #f0f8ff; border: 1px solid var(--accent-teal);">
+                            <div class="card-title">Next Deadline</div>
+                            <div class="card-value" id="deadline-title" style="font-size: 1.8rem;">Loading...</div> 
+                            <p id="deadline-date" style="margin: 0; font-size: 0.9rem; color: var(--accent-teal);">Date: N/A</p>
+                        </div>
+
+                        <!-- Card 5: Notifications -->
+                        <div class="dashboard-card notification-card">
+                            <div class="card-title">Unread Notifications</div>
+                            <div class="card-value" id="notification-count" style="color: var(--primary-blue);">--</div> 
+                            <p id="notification-summary" style="margin: 0; font-size: 0.9rem; color: #757575;">Checking for new alerts...</p>
+                        </div>
+                        
+                        <!-- Card 6: Timetable -->
+                        <div class="dashboard-card timetable-card subject-card" style="min-height: 120px; cursor: default; transform: none;">
+                            <div class="card-title">This Week: Timetable</div>
+                            <div id="timetable-list" style="font-size:0.9rem; color:#616161;">
+                                <p style="margin:6px 0;">Loading timetable...</p>
+                            </div>
+                        </div>
+
+                        <!-- Card 7: Messages -->
+                        <div class="dashboard-card messages-card" style="min-height: 120px;">
+                            <div class="card-title">Recent Messages</div>
+                            <div id="messages-list" style="font-size:0.9rem; color:#616161;">
+                                <p style="margin:6px 0;">No recent messages.</p>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+
+                <!-- View 2: Subjects & Assignments -->
+                <div id="subjects-view" style="display: none; padding: 30px;">
+                    <!-- Hindi/Hinglish content retained in views -->
+                    <h2 style="color: var(--primary-blue); font-size: 2rem;">Subjects & Learning Resources</h2>
+                    <p style="color: #757575; margin-bottom: 20px; font-size: 1.1rem;">Access notes, lecture recordings and submit your assignments here.</p>
+                    
+                    <div id="subject-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        
+                        <!-- Subject Card 1: DSA -->
+                        <div class="dashboard-card subject-card" style="min-height: 120px; cursor: default; transform: none;">
+                            <div class="card-title" style="color: var(--text-dark); font-size: 1.5rem; font-weight: 700;">Data Structures (DSA)</div>
+                            <p style="margin: 5px 0 15px; font-size: 0.9rem; color: #9E9E9E;">Taught by: Dr. Sharma</p>
+                            <div class="action-btns" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <a href="DSA notes/L-4.docx.pdf" target="_blank" class="notes-btn" style="background-color: #17a2b8; color: white; padding: 10px 15px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; flex: 1;">Module 1</a>
+                                <a href="DSA notes/Lecture-7.pdf" target="_blank" class="notes-btn" style="background-color: #008080; color: white; padding: 10px 15px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; flex: 1;">Module 2</a>
+                                <br>
+                                <a target="_blank" href="assignment_submission.html" class="submit-btn" style="background-color: #007bff; color: white; padding: 10px 15px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; flex: 1;">Submit Assignment</a>
+                            </div>
+                        </div>
+
+                        <!-- Subject Card 2: ML -->
+                        <div class="dashboard-card subject-card" style="min-height: 120px; cursor: default; transform: none;">
+                            <div class="card-title" style="color: var(--text-dark); font-size: 1.5rem; font-weight: 700;">Machine Learning (ML)</div>
+                            <p style="margin: 5px 0 15px; font-size: 0.9rem; color: #9E9E9E;">Taught by: Prof. Khan</p>
+                            <div style="display: flex; gap: 10px;">
+                              <a href="ML notes/UGCSE_201_2.4.pdf" target="_blank" class="notes-btn" style="background-color: #17a2b8; color: white; padding: 10px 15px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; flex: 1;">Module 1</a>
+                                <a href="ML notes/UGCSE_201_2.5.pdf" target="_blank" class="notes-btn" style="background-color: #008080; color: white; padding: 10px 15px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; flex: 1;">Module 2</a>
+                                <br>
+                                <a target="_blank" href="assignment_submission.html" class="submit-btn" style="background-color: #007bff; color: white; padding: 10px 15px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; flex: 1;">Submit Assignment</a>
+                            </div>
+                        </div>  
+                           
+
+                        <!-- Subject Card 3: WT -->
+                        <div class="dashboard-card subject-card" style="min-height: 120px; cursor: default; transform: none;">
+                            <div class="card-title" style="color: var(--text-dark); font-size: 1.5rem; font-weight: 700;">Web Technologies (WT)</div>
+                            <p style="margin: 5px 0 15px; font-size: 0.9rem; color: #9E9E9E;">Taught by: Ms. Singh</p>
+                            <div style="display: flex; gap: 10px;">
+                                <a href="Web tech/UGCSE_201_2.7.pdf" target="_blank" class="notes-btn" style="background-color: #17a2b8; color: white; padding: 10px 15px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; flex: 1;">Module 1</a>
+                                <a href="Web tech/UGCSE_201_2.8 (1).pdf" target="_blank" class="notes-btn" style="background-color: #008080; color: white; padding: 10px 15px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; flex: 1;">Module 2</a>
+                                <br>
+                                <a target="_blank" href="assignment_submission.html" class="submit-btn" style="background-color: #007bff; color: white; padding: 10px 15px; border-radius: 6px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; flex: 1;">Submit Assignment</a>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+
+                <!-- NEW View 3: Grades & Results (Detailed View) -->
+                <div id="grades-view" style="display: none; padding: 30px;">
+                    <h2 style="color: var(--primary-blue); font-size: 2rem;">Grades & Results</h2>
+                    <p style="color: #757575; margin-bottom: 20px; font-size: 1.1rem;">View your overall CGPA and detailed scores for each subject.</p>
+                    
+                    <div class="dashboard-card" style="cursor: default; transform: none; opacity: 1; padding: 20px;">
+                        <h3 style="margin-top: 0; color: var(--success-green);">Current Semester CGPA: <span id="grades-cgpa-value">--</span></h3>
+                        <p style="margin-bottom: 10px; color: #757575;">Detailed subject-wise breakdown for the current semester:</p>
+
+                        <div id="grades-table-container">
+                            <!-- Grades Table will be injected here by JavaScript -->
+                        </div>
+
+                        <div style="margin-top: 20px; text-align: right;">
+                            <button class="login-btn" style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: var(--accent-teal); cursor: pointer;">
+                                Download Full Transcript
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW View 4: Attendance (Detailed View) -->
+                <div id="attendance-view" style="display: none; padding: 30px;">
+                    <h2 style="color: var(--primary-blue); font-size: 2rem;">Attendance Tracking</h2>
+                    <p style="color: #757575; margin-bottom: 20px; font-size: 1.1rem;">Check your overall attendance and subject-specific records.</p>
+                    
+                    <div class="dashboard-card" style="cursor: default; transform: none; opacity: 1; padding: 20px;">
+                        <h3 style="margin-top: 0; color: var(--accent-teal);">Overall Attendance: <span id="attendance-overall-value">--%</span></h3>
+                        <p style="margin-bottom: 10px; color: #757575;">Attendance status for individual classes:</p>
+                        
+                        <div id="attendance-table-container">
+                            <!-- Attendance Table will be injected here by JavaScript -->
+                        </div>
+
+                        <div style="margin-top: 20px; text-align: center; background-color: #ffe0b2; padding: 10px; border-radius: 8px;">
+                            <p style="margin: 0; font-weight: 600; color: var(--warning-orange);">Minimum required attendance is 75%. Below 70% may result in detention.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW View 5: Fees & Billing -->
+                <div id="fees-view" style="display: none; padding: 30px;">
+                    <h2 style="color: var(--primary-blue); font-size: 2rem;">Fees & Billing</h2>
+                    <p style="color: #757575; margin-bottom: 20px; font-size: 1.1rem;">Check your payment details and pending balance.</p>
+                    <div class="dashboard-card" style="cursor: default; transform: none; opacity: 1;">
+                        <p style="font-weight: 600; color: var(--accent-teal);">Mock Content: Payment History and Bill Generation section will load here.</p>
+                        <div style="background-color: #ffe0b2; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 5px solid var(--warning-orange);">
+                            <p style="margin: 0; font-weight: 700; color: #e65100;">Outstanding Balance: ₹15,000</p>
+                            <p style="margin: 5px 0 0; font-size: 0.9rem; color: #e65100;">Due Date: 30th Nov. Please pay soon to avoid late fee.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript for Dynamic Data Loading and Animation -->
+    <script>
+        // Demo data (can be overridden by backend fetch)
+        const studentData = {
+            cgpa: 8.5,
+            attendance: 88,
+            fees: {
+                paidPercent: 60,
+                pendingAmount: '₹12,500',
+                dueDate: '30th Nov'
+            },
+            deadline: {
+                title: 'DSA Mid-Term Project',
+                date: '10th October'
+            },
+            notifications: {
+                count: 2,
+                summary: 'New exam schedule published.'
+            },
+            grades: [
+                { subject: 'Data Structures (DSA)', score: 92, grade: 'A', remarks: 'Excellent performance in algorithms.' },
+                { subject: 'Machine Learning (ML)', score: 88, grade: 'A-', remarks: 'Very good, minor deduction in project.' },
+                { subject: 'Web Technologies (WT)', score: 78, grade: 'B', remarks: 'Needs improvement in CSS framework usage.' },
+            ],
+
+            attendanceDetails: [
+                { subject: 'Data Structures (DSA)', held: 40, attended: 36, percentage: 90 },
+                { subject: 'Machine Learning (ML)', held: 35, attended: 28, percentage: 80 },
+                { subject: 'Web Technologies (WT)', held: 45, attended: 31, percentage: 68.8 },
+            ],
+            subjects: [
+                { name: 'Data Structures (DSA)', instructor: 'Dr. Sharma', notes: ['Module 1', 'Module 2'] },
+                { name: 'Machine Learning (ML)', instructor: 'Prof. Khan', notes: ['Module 1', 'Module 2'] },
+                { name: 'Web Technologies (WT)', instructor: 'Ms. Singh', notes: ['Module 1', 'Module 2'] },
+        ],
+
+            timetable: [
+                { day: 'Mon', time: '10:00 - 11:30', subject: 'Data Structures' },
+                { day: 'Tue', time: '12:00 - 13:30', subject: 'Machine Learning' },
+                { day: 'Wed', time: '14:00 - 15:30', subject: 'Web Technologies' }
+            ],
+
+            messages: [
+                { from: 'Dr. Sharma', text: 'Reminder: Submit assignment by 10th Oct.', time: '2 days ago' },
+                { from: 'Admin', text: 'Fee payment portal updated.', time: '5 days ago' }
+            ]
+
+
+        };
+
+        // Function to switch between different views (Dashboard, Subjects, etc.)
+        function navigateTo(viewId) {
+            // Hide all views first
+            document.querySelectorAll('#view-container > div').forEach(view => {
+                view.style.display = 'none';
+            });
+            // Show the requested view
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.style.display = 'block';
+            }
+
+            // Update active class in sidebar
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-view') === viewId) {
+                    link.classList.add('active');
+                }
+            });
+
+            // Load specific view data if necessary
+            if (viewId === 'grades-view') {
+                loadGradesView(studentData);
+            } else if (viewId === 'attendance-view') {
+                loadAttendanceView(studentData);
+            }
+        }
+
+        // Function to update the animated progress ring
+        function updateProgressRing(elementId, percentage, color) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            // Set transition before updating background for smooth effect
+            element.style.transition = 'background-image 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            
+            // Use a small delay to trigger the CSS transition
+            setTimeout(() => {
+                element.style.backgroundImage = `conic-gradient(
+                    ${color} 0% ${percentage}%, 
+                    transparent ${percentage}% 100%
+                )`;
+            }, 50); 
+        }
+
+        /**
+         * Parses the email to extract the name (only letters) and update the welcome message and avatar.
+         * This uses a heuristic: it finds the longest sequence of letters starting from the beginning.
+         * @param {string} email - The user's login email.
+         */
+        function updateUserInfo(email) {
+            if (!email) return;
+
+            // 1. Get the username part (before @)
+            let namePart = email.split('@')[0];
+            
+            let extractedName = namePart;
+            
+            // 2. Heuristic: Find the first sequence of continuous letters, stopping at numbers or symbols.
+            // RegExp: ^([a-zA-Z]+) matches one or more letters [a-zA-Z] at the start of the string (^).
+            const nameMatch = namePart.match(/^([a-zA-Z]+)/); 
+            
+            if (nameMatch && nameMatch[1]) {
+                // If a sequence of letters is found at the start, use it.
+                extractedName = nameMatch[1];
+            } else {
+                // Fallback (rare): Use the whole namePart if the regex fails.
+                extractedName = namePart; 
+            }
+            
+            // 3. Capitalize the first letter for the welcome message
+            let userName = extractedName.charAt(0).toUpperCase() + extractedName.slice(1);
+
+            // 4. Update the welcome message
+            const nameElement = document.getElementById('welcome-user-name');
+            if (nameElement) {
+                nameElement.textContent = userName;
+            }
+
+            // 5. Update the Avatar (Initial of the extracted name + First letter of domain)
+            const avatarElement = document.getElementById('user-avatar-initials');
+            if (avatarElement) {
+                const initial1 = extractedName.charAt(0).toUpperCase();
+                const domainPart = email.split('@')[1] || '';
+                const initial2 = domainPart.charAt(0).toUpperCase();
+                avatarElement.textContent = initial1 + initial2;
+            }
+        }
+
+        // --- Load Grades View Data ---
+        function loadGradesView(data) {
+            document.getElementById('grades-cgpa-value').textContent = data.cgpa.toFixed(2);
+            const container = document.getElementById('grades-table-container');
+            
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Score</th>
+                            <th>Grade</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.grades.forEach(g => {
+                const gradeClass = g.grade.startsWith('A') ? 'grade-a' : (g.grade.startsWith('B') ? 'grade-b' : 'grade-c');
+                html += `
+                    <tr>
+                        <td>${g.subject}</td>
+                        <td>${g.score}%</td>
+                        <td class="${gradeClass}">${g.grade}</td>
+                        <td>${g.remarks}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+        }
+
+        // --- Load Attendance View Data ---
+        function loadAttendanceView(data) {
+            document.getElementById('attendance-overall-value').textContent = data.attendance.toFixed(1);
+            const container = document.getElementById('attendance-table-container');
+
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Attended</th>
+                            <th>Total Classes</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            data.attendanceDetails.forEach(a => {
+                const attendanceClass = a.percentage >= 75 ? 'attendance-high' : 'attendance-low';
+                html += `
+                    <tr>
+                        <td>${a.subject}</td>
+                        <td>${a.attended}</td>
+                        <td>${a.held}</td>
+                        <td class="${attendanceClass}">${a.percentage.toFixed(1)}%</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+        }
+
+
+        // Function to simulate data loading and update the UI
+        function loadDashboardData(data) {
+            // 1. CGPA Update (Animated Ring)
+            const cgpaValue = data.cgpa.toFixed(2);
+            document.getElementById('cgpa-value').textContent = cgpaValue;
+            document.getElementById('cgpa-status-text').textContent = (cgpaValue >= 8.5) ? 'Excellent! Maintain your performance.' : 'Good! Keep working hard.';
+            updateProgressRing('cgpa-ring', data.cgpa * 10, '#4CAF50'); // 8.75 * 10 = 87.5%
+
+            // 2. Attendance Update (Simple Value)
+            document.getElementById('attendance-value').textContent = `${data.attendance}%`;
+            
+            // 3. Fees Update (Animated Ring + Pulsing Alert)
+            document.getElementById('fees-percent-value').textContent = `${data.fees.paidPercent}%`;
+            
+            let feesRingColor = (data.fees.paidPercent === 100) ? 'var(--success-green)' : 'var(--accent-teal)';
+            let feesValueColor = feesRingColor;
+            document.getElementById('fees-percent-value').style.color = feesValueColor;
+            updateProgressRing('fees-ring', data.fees.paidPercent, feesRingColor); 
+
+            const feesPendingText = document.getElementById('fees-pending-text');
+            const payNowButton = document.querySelector('.fees-card .login-btn');
+
+            if (data.fees.paidPercent === 100) {
+                feesPendingText.style.animation = 'none';
+                // Hindi/Hinglish retained here
+                feesPendingText.textContent = '✅ Saari Fees Jama Ho Gayi. Dhanyawad!';
+                feesPendingText.style.color = 'var(--success-green)';
+                payNowButton.style.display = 'none';
+            } else {
+                feesPendingText.textContent = `${data.fees.pendingAmount} Baki (Due: ${data.fees.dueDate})`;
+                feesPendingText.style.color = 'var(--warning-orange)';
+                feesPendingText.style.animation = 'pulse-alert 2s infinite ease-in-out'; 
+                payNowButton.style.display = 'block'; 
+            }
+
+            // 4. Deadline Update
+            document.getElementById('deadline-title').textContent = data.deadline.title;
+            document.getElementById('deadline-date').textContent = `Submission: ${data.deadline.date}`;
+
+            // 5. Notification Update
+            document.getElementById('notification-count').textContent = data.notifications.count;
+            document.getElementById('notification-summary').textContent = data.notifications.summary;
+
+            // 6. Timetable
+            const timetableContainer = document.getElementById('timetable-list');
+            if (timetableContainer) {
+                if (data.timetable && data.timetable.length) {
+                    timetableContainer.innerHTML = data.timetable.slice(0,4).map(t => `<div style="margin:6px 0;">${t.day}: <strong>${t.subject}</strong> <span style="color:#9e9e9e; font-size:0.9rem;">${t.time}</span></div>`).join('');
+                } else {
+                    timetableContainer.innerHTML = '<p style="margin:6px 0;">No timetable available.</p>';
+                }
+            }
+
+            // 7. Messages
+            const messagesContainer = document.getElementById('messages-list');
+            if (messagesContainer) {
+                if (data.messages && data.messages.length) {
+                    messagesContainer.innerHTML = data.messages.slice(0,3).map(m => `<div style="margin:6px 0;"><strong>${m.from}</strong>: ${m.text} <div style=\"color:#9e9e9e;font-size:0.8rem;\">${m.time}</div></div>`).join('');
+                } else {
+                    messagesContainer.innerHTML = '<p style="margin:6px 0;">No recent messages.</p>';
+                }
+            }
+        }
+
+        // Try to fetch data from backend; fall back to demo data if unavailable
+        async function fetchDashboardData() {
+            try {
+                const res = await fetch('/api/dashboard/student');
+                if (!res.ok) throw new Error('Network response was not ok');
+                const serverData = await res.json();
+
+                // If server returns simple object, merge intelligently
+                const merged = Object.assign({}, studentData, serverData);
+
+                // Update welcome name if available
+                if (serverData.name) {
+                    const parts = serverData.name.split(' ');
+                    document.getElementById('welcome-user-name').textContent = parts[0] || serverData.name;
+                }
+
+                loadDashboardData(merged);
+            } catch (err) {
+                // Use demo/local data
+                console.warn('Could not fetch backend dashboard data, using demo:', err);
+                loadDashboardData(studentData);
+            }
+        }
+
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.getElementById('dark-mode-toggle');
+            btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        }
+
+        function logout() {
+            // Simple logout: navigate back to login page
+            window.location.href = 'login.html';
+        }
+
+
+        // Function to handle the Login -> Dashboard Transition (THE SHOCK FACTOR)
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const userEmailInput = document.getElementById('user-email');
+            const userEmail = userEmailInput.value;
+            const loginButton = document.getElementById('login-button-text');
+            const loginMessage = document.getElementById('login-message');
+
+            // Simple Email Validation Check
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(userEmail)) {
+                loginMessage.style.display = 'block';
+                // UPDATED TEXT
+                loginMessage.textContent = '❌ Please enter a valid Email ID (e.g.: user@domain.com).';
+                loginMessage.style.color = 'var(--warning-orange)';
+                return;
+            }
+
+            // --- Step 1: Simulate Password/Link Email ---
+            
+            // Disable button and show loading state
+            loginButton.disabled = true;
+            // UPDATED TEXT
+            loginButton.textContent = 'Sending Link...';
+            loginMessage.style.display = 'none';
+
+            // Simulate the API call to send the password/link (2 seconds delay)
+            setTimeout(() => {
+                loginButton.style.display = 'none'; // Hide the button after simulated sending
+                
+                // UPDATED TEXT
+                loginMessage.textContent = `✅ Secure access link sent to ${userEmail}. Logging you in automatically...`;
+                loginMessage.style.color = 'var(--success-green)';
+                loginMessage.style.display = 'block';
+                
+                // --- Step 2: Transition to Dashboard ---
+                const loginContainer = document.getElementById('login-container');
+                const dashboardLayout = document.getElementById('dashboard-layout');
+
+                setTimeout(() => {
+                    // 1. Hide Login Screen Dramatically
+                    loginContainer.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        loginContainer.style.display = 'none';
+                        dashboardLayout.style.display = 'flex'; // Show Dashboard Layout
+
+                        // Navigate to the default dashboard view and set active link
+                        navigateTo('dashboard-view');
+
+                        // 2. Trigger Card Staggered Load Animation
+                        const dashboardCards = document.querySelectorAll('#dashboard-view .dashboard-card');
+                        dashboardCards.forEach((card, index) => {
+                            card.style.animation = `cardPopUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${0.2 + (index * 0.1)}s forwards`;
+                        });
+
+                        // 3. Update User Info and Simulate Data Load 
+                        setTimeout(() => {
+                            updateUserInfo(userEmail); // <-- Pass email to set name/avatar
+                            loadDashboardData(studentData);
+                        }, 1000); 
+
+                    }, 500); 
+
+                }, 2000); // Wait 2 seconds after message to simulate click/auto-login from email
+
+            }, 2000); // Simulated network delay for sending email (2 seconds)
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Attach click handlers to all navigation links
+            document.querySelectorAll('.nav-link[data-view]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const viewId = link.getAttribute('data-view');
+                    navigateTo(viewId);
+                });
+            });
+
+            // Wire mobile menu button
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            if (mobileBtn) {
+                // show it for small screens
+                function updateMobileBtnVisibility() {
+                    if (window.innerWidth <= 768) {
+                        mobileBtn.style.display = 'inline-block';
+                    } else {
+                        mobileBtn.style.display = 'none';
+                        // ensure sidebar visible on larger screens
+                        document.body.classList.remove('sidebar-collapsed');
+                    }
+                }
+                updateMobileBtnVisibility();
+                window.addEventListener('resize', updateMobileBtnVisibility);
+
+                mobileBtn.addEventListener('click', (e) => { e.preventDefault(); toggleSidebar(); });
+            }
+
+            // Wire dark mode toggle and logout
+            const darkToggle = document.getElementById('dark-mode-toggle');
+            if (darkToggle) darkToggle.addEventListener('click', toggleDarkMode);
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+            // Initial fetch of dashboard data (tries backend, falls back to demo)
+            fetchDashboardData();
+
+            // Navigate to dashboard view by default
+            navigateTo('dashboard-view');
+        });
+    </script>
+
+</body>
+</html>
+    

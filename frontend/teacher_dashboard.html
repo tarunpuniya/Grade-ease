@@ -1,0 +1,1465 @@
+
+
+<script>
+    // Existing code...
+    // NEW FUNCTIONALITY: Mock Grade Saving
+    function saveGrade(gradeId, studentName) {
+        const gradeInput = document.getElementById(gradeId);
+        const grade = gradeInput.value;
+        
+        if (grade === "" || isNaN(grade) || grade < 0 || grade > 100) {
+            alert("Please enter a valid grade between 0 and 100.");
+            return;
+        }
+
+        // --- Mock Backend Interaction ---
+        console.log(`[TEACHER ACTION LOG]: Grade ${grade}/100 submitted for ${studentName}.`);
+        
+        // Simulating the save process
+        const button = event.target;
+        button.disabled = true;
+        button.textContent = 'Saving...';
+        button.style.backgroundColor = '#ffc107';
+
+        setTimeout(() => {
+            alert(`SUCCESS: Grade ${grade} has been recorded for ${studentName}.`);
+            button.textContent = 'Saved!';
+            button.style.backgroundColor = '#28a745';
+        }, 1500); // 1.5 second delay
+    }
+    // Existing code...
+</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeFlow | Teacher Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* ======================================= */
+        /* 1. Global & Color Setup */
+        /* ======================================= */
+        :root {
+            --primary-blue: #004AAD; /* Deep Blue */
+            --accent-teal: #00BCD4; /* Bright Teal for highlights */
+            --success-green: #4CAF50;
+            --warning-orange: #FF9800;
+            --danger-red: #F44336;
+            --light-grey: #F4F6F9;
+            --text-dark: #212121;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            margin: 0; 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--light-grey); 
+            color: var(--text-dark); 
+            overflow-x: hidden;
+        }
+
+        /* ======================================= */
+        /* 2. Login Page Styles (Shared with Student App) */
+        /* ======================================= */
+        #login-container {
+            height: 100vh;
+            display: flex;
+            position: fixed; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 100;
+            background-color: var(--light-grey);
+            transition: opacity 0.5s ease-out; 
+        }
+        .branding-section {
+            flex: 1.5;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #002D62 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .branding-content { z-index: 10; text-align: center; padding: 40px; }
+        .logo-text { font-size: 4rem; font-weight: 800; letter-spacing: -2px; }
+    .form-section { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .login-box {
+            width: 90%; max-width: 420px; padding: 50px; background: white;
+            border-radius: 16px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            opacity: 0; transform: translateY(30px);
+            animation: formSlideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.8s forwards; 
+        }
+        @keyframes formSlideIn { to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse-alert {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        h1 { margin-bottom: 10px; font-size: 2rem; color: var(--text-dark); }
+        .subtitle { margin-bottom: 30px; color: #757575; font-size: 1rem; }
+        
+        /* === Floating Input Group Styling === */
+        
+        .input-group { 
+            position: relative; 
+            margin-bottom: 30px; 
+        }
+        
+        input:not([type="checkbox"]), select { /* Exclude checkboxes from this style */
+            width: 100%; 
+            padding: 15px 0 5px 0; /* Top padding creates space for the label to drop into */
+            border: none; 
+            border-bottom: 2px solid #ddd; 
+            font-size: 1rem; 
+            color: var(--text-dark); 
+            outline: none; 
+            background: none;
+            box-sizing: border-box;
+            line-height: 1.5;
+        }
+        
+        /* Select specific styling to add a custom arrow */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23757575'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0 center;
+            background-size: 1.5em;
+        }
+
+        .input-underline {
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            height: 2px; 
+            width: 0; 
+            background-color: var(--primary-blue); 
+            transition: width 0.3s ease-out;
+        }
+        
+        input:focus + .input-underline, select:focus + .input-underline { width: 100%; }
+        
+        label {
+            position: absolute; 
+            top: 15px; /* Initial resting position (inside the input's top padding) */
+            left: 0; 
+            color: #757575; 
+            font-size: 1rem; 
+            transition: all 0.3s ease; 
+            pointer-events: none;
+        }
+        
+        /* State 2: Label moved UP and shrunk (Active/Filled State) */
+        .input-group input:focus ~ label, 
+        .input-group input:not(:placeholder-shown) ~ label,
+        
+        /* Force label UP for select/date inputs, as they handle values differently */
+        .input-group select:not(:nth-child(1)) ~ label, /* Exclude the placeholder option */
+        .input-group select:not([value=""]) ~ label,
+        .input-group input[type="date"]:focus ~ label,
+        .input-group input[type="date"]:not([value=""]) ~ label,
+        .input-group input:not([type="date"]):not([type="password"]):not([type="email"]):not([type="number"]):not([type="checkbox"]):not(:placeholder-shown) ~ label,
+        .input-group input[type="number"]:not(:placeholder-shown) ~ label { /* Added specific types */
+             top: 0; /* Moved to the top edge */
+             font-size: 0.8rem; /* Smaller size */
+             color: var(--primary-blue);
+        }
+        
+        /* Specific Fix for Selects with value/selection */
+        .input-group select:valid ~ label, 
+        .input-group select:not(:nth-child(1)):focus ~ label {
+             top: 0;
+             font-size: 0.8rem;
+             color: var(--primary-blue);
+        }
+
+
+        .login-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 8px;
+            background-color: var(--primary-blue); color: white; font-size: 1.1rem;
+            font-weight: 600; cursor: pointer; box-shadow: 0 5px 15px rgba(0, 74, 173, 0.3);
+            transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
+        }
+        .login-btn:hover { background-color: #0056b3; box-shadow: 0 8px 20px rgba(0, 74, 173, 0.4); }
+        .login-btn:active { transform: scale(0.98); }
+
+        /* ======================================= */
+        /* 3. Dashboard Styles (Visual & Layout) */
+        /* ======================================= */
+        #dashboard-layout { 
+            display: none; 
+            min-height: 100vh; display: flex;
+        }
+        .sidebar { 
+            width: var(--sidebar-width); background-color: var(--primary-blue); color: white; padding: 20px 0; 
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); position: fixed; height: 100%; z-index: 20;
+            transition: transform 0.25s ease;
+        }
+        .nav-link a { display: block; padding: 12px 20px; color: rgba(255, 255, 255, 0.8); text-decoration: none; transition: background-color 0.3s; }
+        .nav-link a:hover { background-color: rgba(0, 0, 0, 0.2); }
+        .nav-link.active a {
+            background-color: rgba(255, 255, 255, 0.15); 
+            color: white;
+            font-weight: 600;
+            border-left: 4px solid var(--accent-teal); 
+            padding-left: 16px; 
+        }
+
+        .content-area { flex-grow: 1; margin-left: var(--sidebar-width); }
+        .top-bar { padding: 15px 30px; background: white; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--accent-teal); margin-left: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; }
+        .user-info { display: flex; align-items: center; }
+
+        .main-content { 
+            padding: 30px; display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 30px;
+        }
+        
+        .dashboard-card {
+            background: white; padding: 30px; border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05),
+                        0 0 0 1px rgba(0, 0, 0, 0.05); 
+            min-height: 150px; display: flex; flex-direction: column; 
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s; 
+        }
+        .dashboard-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 
+                        0 0 0 1px rgba(0, 0, 0, 0.05); 
+        }
+        .dashboard-card.no-hover:hover { transform: none; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.05); }
+
+        .card-title { font-size: 1.1rem; font-weight: 600; color: #555; margin-bottom: 10px; }
+        .card-value { font-size: 2.5rem; font-weight: 700; }
+        .card-action-btn { 
+            padding: 10px 15px; border: none; border-radius: 6px; font-weight: 600; 
+            cursor: pointer; transition: background-color 0.3s; margin-top: 15px;
+        }
+        
+        /* Utility button for adding/removing items */
+        .utility-btn {
+            padding: 8px 15px; border: none; border-radius: 6px; font-weight: 600; 
+            cursor: pointer; transition: background-color 0.3s, transform 0.1s;
+        }
+        .utility-btn.danger { background-color: var(--danger-red); color: white; margin-left: 10px; }
+        .utility-btn.danger:hover { background-color: #d32f2f; }
+        
+        /* Search container style */
+        .search-container {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .search-container .input-group {
+            flex-grow: 1;
+            margin-bottom: 0;
+        }
+
+        /* Table Styling for Grade Entry/Roster */
+        .data-table {
+            width: 100%; border-collapse: collapse; margin-top: 20px;
+            font-size: 0.95rem;
+        }
+        .data-table th, .data-table td {
+            padding: 12px 15px; border-bottom: 1px solid #eeeeee; text-align: left;
+        }
+        .data-table th {
+            background-color: var(--primary-blue); color: white; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .data-table tbody tr:hover {
+            background-color: #f0f8ff;
+        }
+        .grade-input {
+            width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center;
+        }
+        .attendance-checkbox {
+            transform: scale(1.3);
+            cursor: pointer;
+        }
+        .low-attendance { color: var(--danger-red); font-weight: 700; }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 768px) {
+            /* Hide sidebar by default on small screens */
+            body:not(.sidebar-collapsed) .sidebar { transform: translateX(-110%); }
+            body.sidebar-collapsed .sidebar { transform: translateX(0); }
+            .branding-section { display: none; }
+            #login-container { background-color: white; }
+            .form-section { flex: 1; }
+            .login-box { box-shadow: none; padding: 30px; max-width: none; }
+            .content-area { margin-left: 0; }
+            .sidebar { width: 100%; height: auto; position: relative; padding: 0; display: block; }
+            .sidebar nav ul { display: flex; justify-content: space-around; flex-wrap: wrap; margin-bottom: 0; }
+            .sidebar nav ul li { flex: 1 1 auto; text-align: center; }
+            .sidebar nav ul li a { padding: 10px 5px; border-left: none !important; }
+            .main-content { padding: 15px; grid-template-columns: 1fr; gap: 12px; }
+            .dashboard-card { padding: 14px; min-height: 100px; }
+            
+            /* FIX for mobile: Stack dropdowns vertically and ensure input group respects padding */
+            .input-select-group {
+                flex-direction: column;
+                gap: 0px !important;
+            }
+            .input-select-group .input-group {
+                margin-bottom: 15px; /* Adjust margin for stacked elements */
+            }
+
+            /* Responsive search/add form */
+            .search-container {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            .search-container .input-group {
+                width: 100%;
+            }
+        }
+        /* Dark mode variables */
+        body.dark-mode { --primary-blue: #0b3b5a; --accent-teal: #26c6da; --light-grey: #0f1720; --text-dark: #e6eef6; }
+        body.dark-mode .sidebar { background-color: var(--primary-blue); }
+    </style>
+</head>
+<body>
+
+   
+
+    <!-- 2. Dashboard Container (Visible after Login) -->
+    <div id="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar"> 
+            <div style="font-size: 1.8rem; font-weight: 800; padding: 0 20px 20px; text-align: center;">GradeFlow</div>
+            <nav>
+                <ul style="list-style: none; padding: 0;">
+                    <li class="nav-link active" data-view="dashboard-view"><a href="#">Dashboard Overview</a></li>
+                    <li class="nav-link" data-view="grade-entry-view"><a href="#">Grade Entry</a></li>
+                    <li class="nav-link" data-view="attendance-view"><a href="#">Mark Attendance</a></li>
+                    <li class="nav-link" data-view="student-roster-view"><a href="#">Student Roster</a></li>
+                    <li class="nav-link" data-view="manage-students-view"><a href="#">Manage Students</a></li> <!-- New Link -->
+                    <li class="nav-link" data-view="settings-view"><a href="#">Account Settings</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            
+            <header class="top-bar">
+                <div class="welcome-text">
+                    <h2 style="margin: 0; font-weight: 600;">Welcome, <span id="welcome-teacher-name">Teacher</span>!</h2>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-btn" aria-label="Toggle menu" title="Menu" style="display:none; background:transparent; border:none; color:var(--primary-blue); font-size:1.3rem;">☰</button>
+                    
+                    <div class="user-info">
+                        <span style="font-weight: 500; color: var(--primary-blue);">Faculty</span>
+                        <div class="avatar" id="teacher-avatar-initials">AS</div>
+                    </div>
+
+                    <!-- Dark mode toggle & Logout -->
+                    <button id="dark-mode-toggle" title="Toggle dark mode" style="background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px;border-radius:8px;cursor:pointer;">🌙</button>
+                    <button id="logout-btn" title="Logout" style="background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px;border-radius:8px;cursor:pointer;color:var(--primary-blue);font-weight:600;">Logout</button>
+                </div>
+            </header>
+
+            <!-- View Container -->
+            <div id="view-container"> 
+                
+                <!-- View 1: Dashboard Overview (Initial Content) -->
+                <div id="dashboard-view">
+                    <div class="main-content">
+                        
+                        <!-- Card 1: Total Classes Taught -->
+                        <div class="dashboard-card" style="background-color: #e3f2fd; border-left: 5px solid var(--primary-blue);">
+                            <div class="card-title">Total Classes & Subjects</div>
+                            <div class="card-value" id="total-classes-value">--</div> 
+                            <p style="margin: 0; font-size: 0.9rem; color: var(--primary-blue);">Managing subjects across various years.</p>
+                        </div>
+
+                        <!-- Card 2: Pending Grading Workload -->
+                        <div class="dashboard-card" style="background-color: #fff3e0; border-left: 5px solid var(--warning-orange);">
+                            <div class="card-title">Pending Grades to Enter</div>
+                            <div class="card-value" id="pending-grades-value" style="color: var(--warning-orange);">--</div> 
+                            <p id="pending-grades-detail" style="margin: 0; font-size: 0.9rem; color: #757575;">Next deadline in 3 days.</p>
+                            <button onclick="navigateTo('grade-entry-view')" class="card-action-btn" style="background-color: var(--warning-orange); color: white;">Start Grading Now</button>
+                        </div>
+
+                        <!-- Card 3: Class with Lowest Average Attendance -->
+                        <div class="dashboard-card" style="background-color: #ffebee; border-left: 5px solid var(--danger-red);">
+                            <div class="card-title">Lowest Attendance Alert</div>
+                            <div class="card-value" id="lowest-attendance-class" style="font-size: 1.8rem; color: var(--danger-red);">--</div> 
+                            <p id="lowest-attendance-percent" style="margin: 0; font-size: 0.9rem; color: #757575;">Average: --%</p>
+                            <button onclick="navigateTo('attendance-view')" class="card-action-btn" style="background-color: var(--danger-red); color: white;">View Attendance</button>
+                        </div>
+
+                        <!-- Card 4: Upcoming Lecture / Schedule -->
+                        <div class="dashboard-card" style="grid-column: span 2; border-left: 5px solid var(--success-green);">
+                            <div class="card-title">Today's First Lecture</div>
+                            <div class="card-value" id="next-lecture-details" style="font-size: 2rem; color: var(--success-green);">DSA, BTech 3rd Year</div> 
+                            <p id="next-lecture-time" style="margin: 0; font-size: 1.1rem; color: #757575;">Time: 10:00 AM | Room: LT-402</p>
+                        </div>
+
+                        <!-- Card 5: Timetable -->
+                        <div class="dashboard-card" style="border-left: 5px solid var(--accent-teal);">
+                            <div class="card-title">This Week: Timetable</div>
+                            <div id="timetable-list" style="font-size:0.9rem; color:#616161;">
+                                <p style="margin:6px 0;">Loading timetable...</p>
+                            </div>
+                        </div>
+
+                        <!-- Card 6: Messages -->
+                        <div class="dashboard-card" style="border-left: 5px solid #9C27B0;">
+                            <div class="card-title">Recent Messages</div>
+                            <div id="messages-list" style="font-size:0.9rem; color:#616161;">
+                                <p style="margin:6px 0;">No recent messages.</p>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+
+                <!-- View 2: Grade Entry -->
+                <div id="grade-entry-view" style="display: none; padding: 30px;">
+                    <h2 style="color: var(--primary-blue); font-size: 2rem;">Grade Entry & Submission</h2>
+                    <p style="color: #757575; margin-bottom: 20px; font-size: 1.1rem;">Select the class and submission type to enter scores.</p>
+                    
+                    <div class="dashboard-card no-hover">
+                        <!-- Layout Container for Selects -->
+                        <div class="input-select-group" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                            <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                                <select id="grade-class-select" required onchange="updateAssignmentOptions()">
+                                    <option value="" disabled selected>Select Class & Subject</option>
+                                    <!-- Options populated by JS -->
+                                </select>
+                                <span class="input-underline"></span>
+                                <label for="grade-class-select">Class</label>
+                            </div>
+                            <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                                <select id="grade-assignment-select" required>
+                                    <!-- Changed label to Submission Type -->
+                                    <option value="" disabled selected>Select Submission Type</option>
+                                    <!-- Options populated by JS -->
+                                </select>
+                                <!-- <span class="input-underline"></span>
+                                <label for="grade-assignment-select">Submission Type</label> -->
+                            </div>
+                            <!-- Date input REMOVED from Grade Entry view -->
+                        </div>
+
+                        <button class="login-btn" style="width: 200px; padding: 12px; margin-top: 20px; background-color: var(--accent-teal);" onclick="loadGradeEntryTable()">
+                            Load Grade Sheet
+                        </button>
+                        
+                        <div id="grade-entry-table-container" style="margin-top: 30px;">
+                            <!-- Grade Entry Table will be loaded here -->
+                            <p style="color: #757575;">Select a class and submission type and click 'Load Grade Sheet' to view the roster.</p>
+                        </div>
+
+                        <button id="save-grades-btn" class="login-btn" style="width: 100%; padding: 15px; margin-top: 20px; background-color: var(--success-green); display: none;" onclick="saveGrades()">
+                            Save and Submit Grades
+                        </button>
+                    </div>
+                </div>
+
+                <!-- View 3: Mark Attendance -->
+                <div id="attendance-view" style="display: none; padding: 30px;">
+                    <h2 style="color: var(--primary-blue); font-size: 2rem;">Attendance Tracking</h2>
+                    <p style="color: #757575; margin-bottom: 20px; font-size: 1.1rem;">Mark the attendance for today's lecture.</p>
+                    
+                    <div class="dashboard-card no-hover">
+                        <!-- Layout Container for Selects and Date -->
+                        <div class="input-select-group" style="display: flex; gap: 20px; margin-bottom: 20px;">
+                            <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                                <select id="attendance-class-select" required>
+                                    <option value="" disabled selected>Select Class & Subject</option>
+                                    <!-- Options populated by JS -->
+                                </select>
+                                <span class="input-underline"></span>
+                                <label for="attendance-class-select">Class</label>
+                            </div>
+                            <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                                <!-- Placeholder required for floating label logic -->
+                                <input type="date" id="attendance-date" placeholder=" " value="" required>
+                                <span class="input-underline"></span>
+                                <label for="attendance-date">Date</label>
+                            </div>
+                        </div>
+
+                        <button class="login-btn" style="width: 200px; padding: 12px; margin-top: 20px; background-color: var(--accent-teal);" onclick="loadAttendanceTable()">
+                            Load Attendance Roster
+                        </button>
+                        
+                        <div id="attendance-table-container" style="margin-top: 30px;">
+                            <!-- Attendance Table will be loaded here -->
+                            <p style="color: #757575;">Select a class and date and click 'Load Attendance Roster' to populate the attendance sheet.</p>
+                        </div>
+
+                        <button id="save-attendance-btn" class="login-btn" style="width: 100%; padding: 15px; margin-top: 20px; background-color: var(--success-green); display: none;" onclick="saveAttendance()">
+                            Finalize Today's Attendance
+                        </button>
+                    </div>
+                </div>
+
+                <!-- View 4: Student Roster -->
+                <div id="student-roster-view" style="display: none; padding: 30px;">
+                    <h2 style="color: var(--primary-blue); font-size: 2rem;">My Student Roster</h2>
+                    <p style="color: #757575; margin-bottom: 20px; font-size: 1.1rem;">View all students under your supervision and their summary statistics.</p>
+                    
+                    <div class="dashboard-card no-hover">
+                        <div id="roster-table-container">
+                            <!-- Student Roster Table will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- View 5: Manage Students (New Feature) -->
+                <div id="manage-students-view" style="display: none; padding: 30px;">
+                    <h2 style="color: var(--primary-blue); font-size: 2rem;">Manage Student Enrollment</h2>
+                    <p style="color: #757575; margin-bottom: 20px; font-size: 1.1rem;">Add new students or remove existing ones from your roster. Search students to view full details.</p>
+                    
+                    <div class="dashboard-card" style="margin-bottom: 30px;">
+                        <h3 style="color: var(--accent-teal); margin-top: 0;">Add New Student</h3>
+                        <form id="add-student-form" onsubmit="event.preventDefault(); addStudent()">
+                            <div style="display: flex; gap: 20px;">
+                                <div class="input-group" style="flex: 1;">
+                                    <input type="text" id="new-student-roll" placeholder=" " required>
+                                    <span class="input-underline"></span>
+                                    <label for="new-student-roll">Roll No.</label>
+                                </div>
+                                <div class="input-group" style="flex: 2;">
+                                    <input type="text" id="new-student-name" placeholder=" " required>
+                                    <span class="input-underline"></span>
+                                    <label for="new-student-name">Student Full Name</label>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <select id="new-student-class" required>
+                                    <option value="" disabled selected>Select Primary Class/Batch</option>
+                                    <!-- Options populated by JS (same as grade class select) -->
+                                </select>
+                                <span class="input-underline"></span>
+                                <label for="new-student-class">Primary Class</label>
+                            </div>
+                            <button type="submit" class="login-btn" style="width: 150px; padding: 12px; background-color: var(--success-green);">
+                                Add Student
+                            </button>
+                            <div id="add-student-message" style="margin-top: 15px; font-size: 0.9rem;"></div>
+                        </form>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3 style="color: var(--accent-teal); margin-top: 0;">Search & Manage Existing Students</h3>
+                        
+                        <!-- Student Search and Removal Section -->
+                        <div class="search-container">
+                            <div class="input-group">
+                                <input type="text" id="student-search-input" placeholder=" " oninput="searchStudent()">
+                                <span class="input-underline"></span>
+                                <label for="student-search-input">Search Student by Name or Roll No.</label>
+                            </div>
+                            <!-- Remove button moved into search results display -->
+                        </div>
+                        
+                        <div id="search-results-container">
+                            <p style="color: #757575;">Type a student name or roll number above to see their detailed profile and removal option.</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                 <!-- View 6: Settings -->
+                 <div id="settings-view" style="display: none; padding: 30px;">
+                    <h2 style="color: var(--primary-blue); font-size: 2rem;">Account Settings</h2>
+                    <p style="color: #757575; margin-bottom: 20px; font-size: 1.1rem;">Manage your profile and preferences.</p>
+                    <div class="dashboard-card no-hover">
+                        <p style="font-weight: 600;">Mock Content: Profile Update, Password Change, and Notification Preferences would be configured here.</p>
+                        <div style="margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 8px;">
+                            <p style="margin: 0; font-weight: 500;">Logged in as: <span id="settings-teacher-id">TS101</span></p>
+                            <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Role: Core Faculty | Department: Computer Science</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript for Dynamic Data Loading and App Logic -->
+    <script>
+        // --- Mock Data for Teacher ---
+        const teacherData = {
+            id: 'TS101', // This is the internal Teacher ID
+            mockEmail: 'teacher@gradeflow.edu', // Mock email for login
+            mockPassword: '12345', // Mock password for login
+            name: 'Dr. Anand Sharma',
+            initials: 'AS',
+            classes: [
+                { id: 'DSA-3rd-BTech', name: 'Data Structures (DSA) - BTech 3rd Year', subject: 'DSA', 
+                  // Added a 'submitted' status to one assignment for mock filtering
+                  assignments: [{id: 'proj1', name: 'Project 1 (Max 50)'}, {id: 'midterm', name: 'Midterm Exam (Max 100)'}],
+                  attendanceAvg: 89.5, studentCount: 65, lectureTime: '10:00 AM'
+                },
+                { id: 'ML-4th-BTech', name: 'Machine Learning (ML) - BTech 4th Year', subject: 'ML', 
+                  assignments: [{id: 'final_report', name: 'Final Report (Max 80)'}],
+                  attendanceAvg: 68.2, studentCount: 40, lectureTime: '14:00 PM'
+                },
+                { id: 'Wt-4th-BTech', name: 'Web technology (Wt) - BTech 4th Year', subject: 'Wt', 
+                  assignments: [{id: 'quiz1', name: 'Quiz 1 (Max 20)'}],
+                  attendanceAvg: 92.0, studentCount: 40, lectureTime: '12:00 PM'
+                }
+            ],
+            // Simplified student list for one class (DSA)
+            students: [
+                { id: 'S001', roll: '101', name: 'Aarav Sharma', averageGrade: 85, attendance: 95, submitted: { 'proj1': true }, primaryClass: 'DSA-3rd-BTech' },
+                { id: 'S002', roll: '102', name: 'Priya Singh', averageGrade: 92, attendance: 90, submitted: { 'proj1': true }, primaryClass: 'DSA-3rd-BTech' },
+                { id: 'S003', roll: '103', name: 'Rahul Yadav', averageGrade: 78, attendance: 65, submitted: { 'proj1': false }, primaryClass: 'DSA-3rd-BTech' }, // Low attendance alert
+                { id: 'S004', roll: '104', name: 'Neha Gupta', averageGrade: 90, attendance: 88, submitted: { 'proj1': true }, primaryClass: 'ML-4th-BTech' },
+                { id: 'S005', roll: '105', name: 'Vikram Choudhary', averageGrade: 72, attendance: 75, submitted: { 'proj1': false }, primaryClass: 'ML-4th-BTech' },
+                { id: 'S006', roll: '106', name: 'Kavita Iyer', averageGrade: 81, attendance: 91, submitted: { 'proj1': true }, primaryClass: 'ML-4th-BTech' },
+                { id: 'S007', roll: '107', name: 'Mohit Rana', averageGrade: 68, attendance: 69, submitted: { 'proj1': false }, primaryClass: 'Wt-4th-BTech' }, // Low attendance alert
+                { id: 'S008', roll: '108', name: 'Disha Jain', averageGrade: 95, attendance: 98, submitted: { 'proj1': true }, primaryClass: 'Wt-4th-BTech' },
+                { id: 'S009', roll: '109', name: 'Rajesh Kumar', averageGrade: 77, attendance: 83, submitted: { 'proj1': true }, primaryClass: 'Wt-4th-BTech' },
+                { id: 'S010', roll: '110', name: 'Anjali Verma', averageGrade: 89, attendance: 87, submitted: { 'proj1': true }, primaryClass: 'DSA-3rd-BTech' }
+            ],
+            pendingGrades: 2, // 2 assignments pending across all classes
+            lowAttendanceThreshold: 70,
+            timetable: [
+                { day: 'Mon', time: '10:00 - 11:30', subject: 'Data Structures' },
+                { day: 'Tue', time: '12:00 - 13:30', subject: 'Machine Learning' },
+                { day: 'Wed', time: '14:00 - 15:30', subject: 'Web technology' },
+                { day: 'Thu', time: '09:00 - 10:30', subject: 'Data Structures' }
+            ],
+            messages: [
+                { from: 'Admin', text: 'Grade submission deadline extended to 25th Nov.', time: '3 hours ago' },
+                { from: 'Academic Coord.', text: 'Mid-term exams schedule finalized.', time: '1 day ago' }
+            ]
+        };
+
+        let selectedGradeClassId = '';
+        let selectedAttendanceClassId = '';
+        
+        /**
+         * Gets the full class name from the ID.
+         * @param {string} classId - The ID of the class (e.g., 'DSA-3rd-BTech').
+         * @returns {string} The full class name.
+         */
+        function getClassNameById(classId) {
+             const cls = teacherData.classes.find(c => c.id === classId);
+             return cls ? cls.name : 'N/A';
+        }
+
+
+        // --- Core Navigation and UI Functions ---
+
+        /**
+         * Switches between the different dashboard views.
+         * @param {string} viewId - The ID of the view to display (e.g., 'dashboard-view').
+         */
+        function navigateTo(viewId) {
+            document.querySelectorAll('#view-container > div').forEach(view => {
+                view.style.display = 'none';
+            });
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.style.display = 'block';
+            }
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-view') === viewId) {
+                    link.classList.add('active');
+                }
+            });
+
+            // Load specific view data on navigation
+            if (viewId === 'student-roster-view') {
+                loadRosterView(teacherData);
+            }
+            if (viewId === 'grade-entry-view') {
+                populateClassSelect(document.getElementById('grade-class-select'));
+                updateAssignmentOptions(); // To ensure assignments populate initially
+            }
+            if (viewId === 'attendance-view') {
+                populateClassSelect(document.getElementById('attendance-class-select'));
+                // Set default date to today if not already set by the user
+                const dateInput = document.getElementById('attendance-date');
+                if (!dateInput.value) {
+                    // Set to current date in YYYY-MM-DD format
+                    const today = new Date();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    dateInput.value = `${today.getFullYear()}-${month}-${day}`;
+                }
+            }
+            // New: Populate class select for manage students view
+            if (viewId === 'manage-students-view') {
+                populateClassSelect(document.getElementById('new-student-class'));
+                document.getElementById('add-student-message').textContent = '';
+                document.getElementById('search-results-container').innerHTML = `<p style="color: #757575;">Type a student name or roll number above to see their detailed profile and removal option.</p>`;
+                document.getElementById('student-search-input').value = '';
+            }
+        }
+
+        /**
+         * Populates the class/subject dropdowns.
+         * @param {HTMLElement} selectElement - The target <select> element.
+         */
+        function populateClassSelect(selectElement) {
+            const initialValue = selectElement.value; // Store current value
+            // Clear existing options, keeping the default placeholder
+            while (selectElement.options.length > 1) {
+                selectElement.remove(1);
+            }
+
+            teacherData.classes.forEach(cls => {
+                const option = document.createElement('option');
+                option.value = cls.id;
+                option.textContent = cls.name;
+                selectElement.appendChild(option);
+            });
+            
+            // Restore initial value if it still exists
+            selectElement.value = initialValue;
+            if (selectElement.value !== initialValue) {
+                // If the old value couldn't be restored, reset to placeholder
+                 selectElement.value = "";
+            }
+
+        }
+
+        /**
+         * Updates the assignment dropdown options based on the selected class.
+         */
+        function updateAssignmentOptions() {
+            const classSelect = document.getElementById('grade-class-select');
+            const assignmentSelect = document.getElementById('grade-assignment-select');
+            selectedGradeClassId = classSelect.value;
+            
+            // Clear assignment options
+            while (assignmentSelect.options.length > 1) {
+                assignmentSelect.remove(1);
+            }
+            assignmentSelect.value = ""; // Reset assignment selection
+
+            // Find the label associated with the assignment select and reset its floating state if needed
+            const assignmentLabel = document.querySelector('label[for="grade-assignment-select"]');
+            if (assignmentLabel) {
+                // Ensure label is in its default position if no option is selected
+                assignmentLabel.style.top = '15px'; 
+                assignmentLabel.style.fontSize = '1rem'; 
+                assignmentLabel.style.color = '#757575';
+            }
+            
+            // --- START: Added new "Submitted Assignments" option ---
+            if (selectedGradeClassId) {
+                // 1. Add the Submitted Assignments option
+                const submittedOption = document.createElement('option');
+                submittedOption.value = 'submitted';
+                submittedOption.textContent = 'Submitted Assignments (Filter)';
+                assignmentSelect.appendChild(submittedOption);
+
+                const selectedClass = teacherData.classes.find(c => c.id === selectedGradeClassId);
+                if (selectedClass && selectedClass.assignments) {
+                    // 2. Add specific assignment options
+                    selectedClass.assignments.forEach(assignment => {
+                        const option = document.createElement('option');
+                        option.value = assignment.id;
+                        option.textContent = assignment.name;
+                        assignmentSelect.appendChild(option);
+                    });
+                }
+            }
+            // --- END: Added new "Submitted Assignments" option ---
+        }
+        
+        // --- Dashboard View Data Loader ---
+
+        function loadDashboardData(data) {
+            // 1. Total Classes
+            document.getElementById('total-classes-value').textContent = data.classes.length;
+            
+            // 2. Pending Grades
+            document.getElementById('pending-grades-value').textContent = data.pendingGrades;
+            if (data.pendingGrades === 0) {
+                document.getElementById('pending-grades-value').style.color = 'var(--success-green)';
+                document.getElementById('pending-grades-detail').textContent = 'All grades are up to date! Great job.';
+            } else {
+                document.getElementById('pending-grades-value').style.color = 'var(--warning-orange)';
+                document.getElementById('pending-grades-detail').textContent = 'Next deadline in 3 days.';
+            }
+
+            // 3. Lowest Attendance Alert
+            const lowestClass = data.classes.reduce((min, cls) => 
+                (cls.attendanceAvg < min.attendanceAvg ? cls : min), data.classes[0]);
+            
+            document.getElementById('lowest-attendance-class').textContent = lowestClass.name.split(' - ')[0]; // Show only Subject name
+            document.getElementById('lowest-attendance-percent').textContent = `Average: ${lowestClass.attendanceAvg.toFixed(1)}%`;
+
+            if (lowestClass.attendanceAvg < data.lowAttendanceThreshold) {
+                document.getElementById('lowest-attendance-class').style.animation = 'pulse-alert 2s infinite ease-in-out';
+                document.getElementById('lowest-attendance-class').style.color = 'var(--danger-red)';
+            } else {
+                document.getElementById('lowest-attendance-class').style.animation = 'none';
+                document.getElementById('lowest-attendance-class').style.color = 'var(--success-green)';
+            }
+            
+            // 4. Next Lecture
+            const nextLecture = data.classes.find(cls => cls.lectureTime === '10:00 AM') || data.classes[0];
+            document.getElementById('next-lecture-details').textContent = `${nextLecture.subject}, ${nextLecture.name.split(' - ')[1]}`;
+            document.getElementById('next-lecture-time').textContent = `Time: ${nextLecture.lectureTime} | Room: LT-402`;
+
+            // 5. Timetable
+            const timetableContainer = document.getElementById('timetable-list');
+            if (timetableContainer) {
+                if (data.timetable && data.timetable.length) {
+                    timetableContainer.innerHTML = data.timetable.slice(0,4).map(t => `<div style="margin:6px 0;">${t.day}: <strong>${t.subject}</strong> <span style="color:#9e9e9e; font-size:0.9rem;">${t.time}</span></div>`).join('');
+                } else {
+                    timetableContainer.innerHTML = '<p style="margin:6px 0;">No timetable available.</p>';
+                }
+            }
+
+            // 6. Messages
+            const messagesContainer = document.getElementById('messages-list');
+            if (messagesContainer) {
+                if (data.messages && data.messages.length) {
+                    messagesContainer.innerHTML = data.messages.slice(0,3).map(m => `<div style="margin:6px 0;"><strong>${m.from}</strong>: ${m.text} <div style="color:#9e9e9e;font-size:0.8rem;">${m.time}</div></div>`).join('');
+                } else {
+                    messagesContainer.innerHTML = '<p style="margin:6px 0;">No recent messages.</p>';
+                }
+            }
+        }
+
+        /**
+         * Parses the Teacher ID to extract name and update the welcome message and avatar.
+         * @param {string} teacherId - The internal teacher ID (e.g., TS101).
+         */
+        function updateTeacherInfo(teacherId) {
+            const nameElement = document.getElementById('welcome-teacher-name');
+            const avatarElement = document.getElementById('teacher-avatar-initials');
+            
+            // In a real app, this would fetch the full name from a database based on ID
+            const name = teacherData.name;
+            const initials = teacherData.initials; 
+
+            if (nameElement) nameElement.textContent = name;
+            if (avatarElement) avatarElement.textContent = initials;
+            
+            document.getElementById('settings-teacher-id').textContent = teacherId;
+        }
+
+        // --- Grade Entry Functions ---
+
+        /**
+         * Loads the grade entry table for the selected class and assignment.
+         */
+        function loadGradeEntryTable() {
+            const classSelect = document.getElementById('grade-class-select');
+            const assignmentSelect = document.getElementById('grade-assignment-select');
+            const container = document.getElementById('grade-entry-table-container');
+            const saveBtn = document.getElementById('save-grades-btn');
+
+            if (!classSelect.value || !assignmentSelect.value) {
+                container.innerHTML = `<p style="color: var(--warning-orange); font-weight: 600;">⚠️ Please select both a Class and a Submission Type first.</p>`;
+                saveBtn.style.display = 'none';
+                return;
+            }
+            
+            const selectedAssignmentId = assignmentSelect.value;
+            let assignmentText = assignmentSelect.options[assignmentSelect.selectedIndex].text;
+            let maxScore = 100;
+            let filteredStudents = teacherData.students.filter(s => s.primaryClass === classSelect.value); // Filter students by selected class
+
+            // --- Logic for new 'Submitted Assignments' filter ---
+            if (selectedAssignmentId === 'submitted') {
+                // Find a mock assignment ID (using 'proj1' for demonstration)
+                const mockAssignmentId = 'proj1'; 
+                // Filter students who have a 'true' value for this mock assignment ID in their 'submitted' object
+                filteredStudents = filteredStudents.filter(s => s.submitted && s.submitted[mockAssignmentId]);
+                assignmentText = "Submitted Assignments (Filtered Roster)";
+                maxScore = "N/A"; // Max score is not relevant for a filtered list
+                saveBtn.style.display = 'none';
+                container.innerHTML = `<p style="color: var(--primary-blue); font-weight: 600;">Showing ${filteredStudents.length} students who have submitted *Project 1* from this class.</p>`;
+            } else {
+                // Regular assignment grading mode
+                // Find max score from assignment name (e.g., "Project 1 (Max 50)")
+                const maxMatch = assignmentText.match(/\(Max (\d+)\)/);
+                maxScore = maxMatch ? parseInt(maxMatch[1], 10) : 100;
+                saveBtn.style.display = 'block';
+                container.innerHTML = '';
+            }
+            
+            let html = `
+                <h3 style="color: var(--accent-teal);">Grade Sheet: ${assignmentText}</h3>
+                <table class="data-table" id="grades-table">
+                    <thead>
+                        <tr>
+                            <th>Roll No.</th>
+                            <th>Student Name</th>
+                            <th>Score ${maxScore !== "N/A" ? `(Max ${maxScore})` : ''}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            if (filteredStudents.length === 0) {
+                 html += `<tr><td colspan="3" style="text-align: center; color: #757575; padding: 30px;">No students match the selected criteria in this class.</td></tr>`;
+            } else {
+                filteredStudents.forEach(student => {
+                    // Determine if the input should be visible (only for actual assignments, not the filter)
+                    const scoreInput = selectedAssignmentId === 'submitted' 
+                        ? `<span style="color: #757575;">--</span>`
+                        : `<input type="number" 
+                                class="grade-input" 
+                                data-student-id="${student.id}" 
+                                min="0" 
+                                max="${maxScore}" 
+                                placeholder="--"
+                                style="width: 70px;">`;
+
+                    html += `
+                        <tr>
+                            <td>${student.roll}</td>
+                            <td>${student.name}</td>
+                            <td>${scoreInput}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML += html;
+            
+            // Only show save button if it's a specific assignment
+            if (selectedAssignmentId !== 'submitted') {
+                saveBtn.style.display = 'block';
+            } else {
+                saveBtn.style.display = 'none';
+            }
+        }
+
+        /**
+         * Simulates saving the entered grades.
+         */
+        function saveGrades() {
+            const inputs = document.querySelectorAll('#grades-table .grade-input');
+            const gradesToSave = [];
+            let isValid = true;
+
+            inputs.forEach(input => {
+                const score = parseInt(input.value, 10);
+                const max = parseInt(input.getAttribute('max'), 10);
+                
+                if (input.value !== "" && (isNaN(score) || score < 0 || score > max)) {
+                    input.style.borderColor = 'var(--danger-red)';
+                    isValid = false;
+                    return;
+                } else if (input.value !== "") {
+                    input.style.borderColor = '#ccc';
+                    gradesToSave.push({
+                        studentId: input.dataset.studentId,
+                        score: score
+                    });
+                }
+            });
+
+            const messageBox = document.getElementById('grade-entry-table-container');
+
+            if (!isValid) {
+                // Remove previous success/error messages before showing new error
+                messageBox.innerHTML = messageBox.innerHTML.replace(/<p style="color: var\(--success-green\).*?<\/p>/, '').replace(/<p style="color: var\(--danger-red\).*?<\/p>/, '');
+
+                messageBox.innerHTML = `<p style="color: var(--danger-red); font-weight: 700;">❌ Error: Please correct the highlighted scores. Ensure they are between 0 and the maximum score.</p>` + messageBox.innerHTML;
+                return;
+            }
+
+            if (gradesToSave.length === 0) {
+                 // Remove previous success/error messages
+                 messageBox.innerHTML = messageBox.innerHTML.replace(/<p style="color: var\(--success-green\).*?<\/p>/, '').replace(/<p style="color: var\(--danger-red\).*?<\/p>/, '');
+                 messageBox.innerHTML = `<p style="color: var(--warning-orange); font-weight: 700;">No grades entered. Please enter at least one score before saving.</p>` + messageBox.innerHTML;
+                 return;
+            }
+
+            // Simulate save
+            document.getElementById('save-grades-btn').textContent = 'Saving...';
+            document.getElementById('save-grades-btn').disabled = true;
+
+            setTimeout(() => {
+                // Clear the table and show success message
+                document.getElementById('grade-entry-table-container').innerHTML = `<p style="color: var(--success-green); font-weight: 700;">✅ Success! ${gradesToSave.length} grades submitted for: ${document.getElementById('grade-assignment-select').options[document.getElementById('grade-assignment-select').selectedIndex].text}.</p>`;
+                document.getElementById('save-grades-btn').style.display = 'none';
+                
+                // Reset pending grades count on dashboard mock data
+                teacherData.pendingGrades = Math.max(0, teacherData.pendingGrades - 1);
+                loadDashboardData(teacherData); // Update dashboard card
+
+            }, 1500);
+        }
+
+        // --- Attendance Functions ---
+        
+        /**
+         * Loads the attendance table for the selected class and date.
+         */
+        function loadAttendanceTable() {
+            const classSelect = document.getElementById('attendance-class-select');
+            const dateInput = document.getElementById('attendance-date');
+            const container = document.getElementById('attendance-table-container');
+            const saveBtn = document.getElementById('save-attendance-btn');
+            
+            if (!classSelect.value || !dateInput.value) {
+                container.innerHTML = `<p style="color: var(--warning-orange); font-weight: 600;">⚠️ Please select both a Class and a Date first.</p>`;
+                saveBtn.style.display = 'none';
+                return;
+            }
+            
+            selectedAttendanceClassId = classSelect.value;
+            const className = classSelect.options[classSelect.selectedIndex].text;
+            
+            const filteredStudents = teacherData.students.filter(s => s.primaryClass === classSelect.value); // Filter students by selected class
+
+            let html = `
+                <h3 style="color: var(--accent-teal);">Marking Attendance for: ${className} on ${new Date(dateInput.value).toDateString()}</h3>
+                <table class="data-table" id="attendance-roster">
+                    <thead>
+                        <tr>
+                            <th>Roll No.</th>
+                            <th>Student Name</th>
+                            <th>Present <span style="font-weight: 400; font-size: 0.8em;">(Check for Present)</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            if (filteredStudents.length === 0) {
+                 html += `<tr><td colspan="3" style="text-align: center; color: #757575; padding: 30px;">No students found in this class.</td></tr>`;
+                 saveBtn.style.display = 'none';
+            } else {
+                filteredStudents.forEach(student => {
+                    // Mock: Pre-check present for students with high attendance for demonstration
+                    const isPresent = student.attendance > 80 ? 'checked' : '';
+                    html += `
+                        <tr>
+                            <td>${student.roll}</td>
+                            <td>${student.name}</td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" 
+                                    class="attendance-checkbox" 
+                                    data-student-id="${student.id}" 
+                                    ${isPresent}>
+                            </td>
+                        </tr>
+                    `;
+                });
+                saveBtn.style.display = 'block';
+            }
+
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+        }
+
+        /**
+         * Simulates saving the attendance records.
+         */
+        function saveAttendance() {
+            const checkboxes = document.querySelectorAll('#attendance-roster .attendance-checkbox');
+            const presentStudents = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const totalStudents = checkboxes.length;
+
+            // Simulate save
+            document.getElementById('save-attendance-btn').textContent = 'Finalizing Attendance...';
+            document.getElementById('save-attendance-btn').disabled = true;
+
+            const messageBox = document.getElementById('attendance-table-container');
+
+            setTimeout(() => {
+                messageBox.innerHTML = `<p style="color: var(--success-green); font-weight: 700;">✅ Success! Attendance finalized for: ${new Date(document.getElementById('attendance-date').value).toDateString()}. ${presentStudents} out of ${totalStudents} students were present.</p>`;
+                document.getElementById('save-attendance-btn').style.display = 'none';
+            }, 1500);
+        }
+
+        // --- Roster View Functions ---
+
+        /**
+         * Loads the full student roster table.
+         */
+        function loadRosterView(data) {
+            const container = document.getElementById('roster-table-container');
+
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Roll No.</th>
+                            <th>Student Name</th>
+                            <th>Primary Class</th>
+                            <th>Average Grade</th>
+                            <th>Attendance %</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.students.forEach(s => {
+                const attendanceClass = s.attendance < data.lowAttendanceThreshold ? 'low-attendance' : '';
+                const statusText = s.attendance < data.lowAttendanceThreshold ? '🚨 Warning' : 'Normal';
+                const className = getClassNameById(s.primaryClass).split(' - ')[0]; // Show just the subject name
+                
+                html += `
+                    <tr>
+                        <td>${s.roll}</td>
+                        <td>${s.name}</td>
+                        <td>${className}</td>
+                        <td>${s.averageGrade}%</td>
+                        <td class="${attendanceClass}">${s.attendance.toFixed(1)}%</td>
+                        <td>${statusText}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+            container.innerHTML = html;
+        }
+        
+        // --- Manage Students Functions (NEW) ---
+
+        /**
+         * Simulates adding a new student to the mock data.
+         */
+        function addStudent() {
+            const rollInput = document.getElementById('new-student-roll');
+            const nameInput = document.getElementById('new-student-name');
+            const classSelect = document.getElementById('new-student-class');
+            const messageBox = document.getElementById('add-student-message');
+
+            const roll = rollInput.value.trim();
+            const name = nameInput.value.trim();
+            const primaryClass = classSelect.value;
+            
+            messageBox.style.color = 'var(--danger-red)';
+
+            if (!roll || !name || !primaryClass) {
+                messageBox.textContent = '❌ Please fill in all fields.';
+                return;
+            }
+
+            // Check if Roll No. already exists
+            if (teacherData.students.some(s => s.roll.toLowerCase() === roll.toLowerCase())) {
+                messageBox.textContent = `❌ Error: Roll No. ${roll} already exists.`;
+                return;
+            }
+
+            // Simulate generating a new student ID
+            const newId = 'S' + String(teacherData.students.length + 1).padStart(3, '0');
+
+            const newStudent = {
+                id: newId,
+                roll: roll,
+                name: name,
+                averageGrade: 0, // New student starts with 0
+                attendance: 0,   // New student starts with 0
+                submitted: {},
+                primaryClass: primaryClass
+            };
+            
+            // Add student to mock data
+            teacherData.students.push(newStudent);
+            
+            // Success message and reset form
+            messageBox.style.color = 'var(--success-green)';
+            messageBox.textContent = `✅ Success! ${name} (Roll: ${roll}) added to ${getClassNameById(primaryClass)}.`;
+            rollInput.value = '';
+            nameInput.value = '';
+            classSelect.value = '';
+            
+            // Manually reset floating label state for inputs
+            document.querySelectorAll('#add-student-form .input-group input').forEach(input => {
+                const label = document.querySelector(`label[for="${input.id}"]`);
+                if (label) {
+                    label.style.top = '15px';
+                    label.style.fontSize = '1rem';
+                    label.style.color = '#757575';
+                }
+            });
+            // Manually reset select label state
+            const classLabel = document.querySelector('label[for="new-student-class"]');
+            if(classLabel) {
+                 classLabel.style.top = '15px';
+                 classLabel.style.fontSize = '1rem';
+                 classLabel.style.color = '#757575';
+            }
+        }
+
+        /**
+         * Searches for a student by name or roll number and displays results.
+         */
+        function searchStudent() {
+            const query = document.getElementById('student-search-input').value.trim().toLowerCase();
+            const container = document.getElementById('search-results-container');
+
+            if (query.length < 2) {
+                container.innerHTML = `<p style="color: #757575;">Type a student name or roll number above to see their detailed profile and removal option.</p>`;
+                return;
+            }
+
+            const foundStudent = teacherData.students.find(s => 
+                s.name.toLowerCase().includes(query) || s.roll.toLowerCase() === query
+            );
+
+            if (foundStudent) {
+                const attendanceClass = foundStudent.attendance < teacherData.lowAttendanceThreshold ? 'low-attendance' : '';
+                const primaryClassName = getClassNameById(foundStudent.primaryClass);
+
+                container.innerHTML = `
+                    <div style="padding: 15px 20px; border: 1px solid var(--primary-blue); border-radius: 8px; background-color: #f0f8ff;">
+                        <h4 style="margin: 0; color: var(--primary-blue); display: flex; justify-content: space-between; align-items: center;">
+                            Student Profile: ${foundStudent.name}
+                            <button class="utility-btn danger" onclick="removeStudent('${foundStudent.id}')">Remove Student</button>
+                        </h4>
+                        <p style="margin-top: 10px; margin-bottom: 5px;"><strong>Roll No.:</strong> ${foundStudent.roll}</p>
+                        <p style="margin: 5px 0;"><strong>Primary Class:</strong> ${primaryClassName}</p>
+                        <p style="margin: 5px 0;"><strong>Avg Grade:</strong> ${foundStudent.averageGrade}%</p>
+                        <p style="margin: 5px 0;" class="${attendanceClass}"><strong>Attendance:</strong> ${foundStudent.attendance.toFixed(1)}%</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `<p style="color: var(--warning-orange); font-weight: 600;">⚠️ No student found matching "${query}".</p>`;
+            }
+        }
+
+        /**
+         * Simulates removing a student from the mock data.
+         * @param {string} studentId - The ID of the student to remove.
+         */
+        function removeStudent(studentId) {
+             // In a real application, you would replace confirm() with a custom modal
+            if (!window.confirm('Are you sure you want to permanently remove this student from your roster? This action cannot be undone.')) {
+                return;
+            }
+
+            const studentIndex = teacherData.students.findIndex(s => s.id === studentId);
+            
+            if (studentIndex > -1) {
+                const removedStudent = teacherData.students.splice(studentIndex, 1)[0];
+                
+                // Clear search results and show success message
+                const container = document.getElementById('search-results-container');
+                container.innerHTML = `<p style="color: var(--danger-red); font-weight: 700;">🗑️ Student ${removedStudent.name} (Roll: ${removedStudent.roll}) has been permanently removed from the roster.</p>`;
+                document.getElementById('student-search-input').value = '';
+            } else {
+                 const container = document.getElementById('search-results-container');
+                 container.innerHTML = `<p style="color: var(--danger-red); font-weight: 700;">❌ Error: Student ID not found in roster.</p>`;
+            }
+        }
+
+
+        // --- Login & Initialization ---
+
+        /**
+         * Parses the Teacher ID to extract name and update the welcome message and avatar.
+         * @param {string} teacherId - The internal teacher ID (e.g., TS101).
+         */
+        function updateTeacherInfo(teacherId) {
+            const nameElement = document.getElementById('welcome-teacher-name');
+            const avatarElement = document.getElementById('teacher-avatar-initials');
+            
+            // In a real app, this would fetch the full name from a database based on ID
+            const name = teacherData.name;
+            const initials = teacherData.initials; 
+
+            if (nameElement) nameElement.textContent = name;
+            if (avatarElement) avatarElement.textContent = initials;
+            
+            document.getElementById('settings-teacher-id').textContent = teacherId;
+        }
+
+        // Try to fetch data from backend; fall back to demo data if unavailable
+        async function fetchDashboardData() {
+            try {
+                const res = await fetch('/api/dashboard/teacher');
+                if (!res.ok) throw new Error('Network response was not ok');
+                const serverData = await res.json();
+
+                // If server returns simple object, merge intelligently
+                const merged = Object.assign({}, teacherData, serverData);
+
+                // Update welcome name if available
+                if (serverData.name) {
+                    document.getElementById('welcome-teacher-name').textContent = serverData.name;
+                }
+
+                loadDashboardData(merged);
+            } catch (err) {
+                // Use demo/local data
+                console.warn('Could not fetch backend dashboard data, using demo:', err);
+                loadDashboardData(teacherData);
+            }
+        }
+
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.getElementById('dark-mode-toggle');
+            btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        }
+
+        function logout() {
+            // Simple logout: navigate back to login page
+            window.location.href = 'login.html';
+        }
+        
+        function updateLoginMessage(text, color) {
+            const loginMessage = document.getElementById('login-message');
+            loginMessage.textContent = text;
+            loginMessage.style.color = color;
+            loginMessage.style.display = 'block';
+            loginMessage.style.backgroundColor = color === 'var(--success-green)' ? '#e8f5e9' : (color === 'var(--danger-red)' ? '#ffebee' : (color === 'var(--primary-blue)' ? '#e3f2fd' : '#fff3e0'));
+            loginMessage.style.borderColor = color;
+        }
+
+        /**
+         * Handles the simplified one-step login using mock credentials.
+         */
+        function handleTeacherLogin(event) {
+            event.preventDefault();
+
+            const emailInput = document.getElementById('teacher-email');
+            const passwordInput = document.getElementById('teacher-password');
+            const loginButton = document.querySelector('.login-btn');
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            // Validation
+            if (email === "" || password === "") {
+                updateLoginMessage('❌ Please enter both email and password.', 'var(--warning-orange)');
+                return;
+            }
+
+            // Mock Verification
+            if (email !== teacherData.mockEmail || password !== teacherData.mockPassword) {
+                updateLoginMessage(`❌ Invalid credentials. Please use these credentials: Email: ${teacherData.mockEmail}, Password: ${teacherData.mockPassword}`, 'var(--danger-red)');
+                return;
+            }
+
+            // Successful Login -> Transition to Dashboard
+            loginButton.disabled = true;
+            loginButton.textContent = 'Logging in...';
+            updateLoginMessage(`✅ Authentication successful. Loading dashboard...`, 'var(--success-green)');
+
+            const loginContainer = document.getElementById('login-container');
+            const dashboardLayout = document.getElementById('dashboard-layout');
+
+            setTimeout(() => {
+                loginContainer.style.opacity = '0';
+                
+                setTimeout(() => {
+                    loginContainer.style.display = 'none';
+                    dashboardLayout.style.display = 'flex';
+
+                    // Initialize Dashboard
+                    navigateTo('dashboard-view');
+
+                    // Trigger Card Staggered Load Animation (Simple fade in for this version)
+                    document.querySelectorAll('#dashboard-view .dashboard-card').forEach((card, index) => {
+                         card.style.opacity = '0';
+                         card.style.transform = 'translateY(20px)';
+                         setTimeout(() => {
+                            card.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+                            card.style.opacity = '1';
+                            card.style.transform = 'translateY(0)';
+                         }, 200 + (index * 100)); 
+                    });
+                    
+                    updateTeacherInfo(teacherData.id); // Use the internal ID for dashboard data
+                    loadDashboardData(teacherData);
+
+                }, 500); 
+
+            }, 1000); 
+        }
+
+        // Attach event listeners on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleTeacherLogin);
+            }
+            
+            // Attach click handlers to all navigation links
+            document.querySelectorAll('.nav-link[data-view]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const viewId = link.getAttribute('data-view');
+                    navigateTo(viewId);
+                });
+            });
+
+            // Wire mobile menu button
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            if (mobileBtn) {
+                // show it for small screens
+                function updateMobileBtnVisibility() {
+                    if (window.innerWidth <= 768) {
+                        mobileBtn.style.display = 'inline-block';
+                    } else {
+                        mobileBtn.style.display = 'none';
+                        // ensure sidebar visible on larger screens
+                        document.body.classList.remove('sidebar-collapsed');
+                    }
+                }
+                updateMobileBtnVisibility();
+                window.addEventListener('resize', updateMobileBtnVisibility);
+
+                mobileBtn.addEventListener('click', (e) => { e.preventDefault(); toggleSidebar(); });
+            }
+
+            // Wire dark mode toggle and logout
+            const darkToggle = document.getElementById('dark-mode-toggle');
+            if (darkToggle) darkToggle.addEventListener('click', toggleDarkMode);
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) logoutBtn.addEventListener('click', logout);
+            
+            // Initial message to guide the user
+            updateLoginMessage(`Please use these mock credentials: Email: ${teacherData.mockEmail}, Password: ${teacherData.mockPassword}`, 'var(--primary-blue)');
+            
+            // Fix for floating labels on load
+            document.querySelectorAll('.input-group input, .input-group select').forEach(input => {
+                // Manually trigger the label up state if a value is present (for date inputs)
+                if (input.value) {
+                    const label = document.querySelector(`label[for="${input.id}"]`);
+                    if (label) {
+                        label.style.top = '0';
+                        label.style.fontSize = '0.8rem';
+                        label.style.color = 'var(--primary-blue)';
+                    }
+                }
+            });
+        });
+        
+        // Custom replacement for window.confirm since it is blocked in this environment
+        window.confirm = (message) => {
+            return true; // Always confirm for the purpose of this simulation
+        };
+    </script>
+
+</body>
+</html>
