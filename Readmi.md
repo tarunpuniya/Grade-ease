@@ -55,3 +55,5 @@ For teachers, the platform provides tools to:
 **React.js → Node.js + Express.js → MongoDB**
 
 Chart.js will be integrated into the React frontend to provide visual representations of academic data.
+
+# 
