@@ -1,37 +1,43 @@
 const mongoose = require('mongoose')
-
+const Schema = mongoose.Schema
 
 const studentSchema = new Schema({
-    name:{
-        type:String,
-        required:true
-    },
-    email:{
-        type:String,
-        required:true,
-        unique:true
+
+    name: {
+        type: String,
+        required: true
     },
 
-    password:{
-        type:String,
-        required:true
+    email: {
+        type: String,
+        required: true,
+        unique: true
     },
 
-    rollno:{
-        type:String,
-        required:true,
-        unique:true
+    password: {
+        type: String,
+        default: null
     },
 
-    semester:{
-        type:Number,
-        required:true
+    isVerified: {
+        type: Boolean,
+        default: false
     },
 
-    createdAt:{
-        type:Date,
+    rollno: {
+        type: String,
+        required: true,
+        unique: true
+    },
+
+    semester: {
+        type: Number,
+        required: true
+    },
+
+    createdAt: {
+        type: Date,
         default: Date.now
     }
 })
-
-module.exports = mongoose.model("Student",studentSchema)
+module.exports = mongoose.model("Student", studentSchema)
