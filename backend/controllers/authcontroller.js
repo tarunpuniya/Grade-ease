@@ -1,5 +1,6 @@
 const Student = require('../models/students')
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken")
 const {generateOTP} = require('../utils/otpGenerator')
 const {sendEmail} = require('../utils/mailer')
 const Otpverification = require('../models/otpverification')
@@ -108,5 +109,41 @@ exports.StudentCreatePassword = async(req,res)=>{
     catch(error){
         console.log(error)
         return res.status(500).send("internal server error")
+    }
+}
+
+// student login
+
+exports.StudentLogin = async(req,res)=>{
+    try{
+        const {email , password} = req.body
+        const student = await Student.findOne({email})
+        if(!student){
+            return res.status(400).send("student not found")
+        }
+        if(!student.isVerified){
+            return res.status(403).send("Account not activated please verify otp and create password")
+        }
+        const isPasswordMatch = await bcrypt.compare(password,student.password)
+        if(!isPasswordMatch){
+            return res.status(401).send("Invalid password")
+        }
+
+        const token = jwt.sign({
+            id: student._id,
+            email: student.email,
+            role: "student"
+        }, process.env.JWT_SECRET,{
+            expiresIn: "1d"
+        })
+        return res.status(200).json({
+            success:true,
+            message:"Login successful",
+            token
+        })
+    }
+    catch(error){
+        console.log(error)
+        return res.status(500).send("Internal server error")
     }
 }
