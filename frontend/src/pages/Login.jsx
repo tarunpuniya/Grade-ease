@@ -1,24 +1,24 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React , {useState} from 'react'
+import '../styles/login.css'
+import {FaUser , FaLock} from "react-icons/fa"
+import {useNavigate} from 'react-router-dom'
 
-function Login() {
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+const LoginForm = ()=>{
+  const [email , setEmail] = useState('')
+  const [password , setPassword] = useState('')
+  const [error,setError] = useState('')
 
   const navigate = useNavigate()
-
-  const handleLogin = async (e) => {
+  const handleLogin = async (e) =>{
     e.preventDefault()
 
-    try {
-
+    try{
       const response = await fetch(
         'http://localhost:5678/api/auth/student/login',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
+          headers:{
+            'content-type': 'application/json'
           },
           body: JSON.stringify({
             email,
@@ -26,58 +26,128 @@ function Login() {
           })
         }
       )
-
       const data = await response.json()
-
-      if (response.ok) {
-
-        localStorage.setItem('token', data.token)
-
+      if(response.ok){
+        localStorage.setItem('token',data.token)
         console.log('Login successful')
-
         navigate('/dashboard')
-
-      } else {
-
-        console.log(data)
-
+      }else{
+        setError(data.message || data)
       }
-
-    } catch (error) {
-
+    }
+    catch(error){
       console.log(error)
-
     }
   }
-
   return (
-    <div>
-
-      <h1>Student Login</h1>
-
+    <div className = 'wrapper'>
       <form onSubmit={handleLogin}>
+        <h1>Login</h1>
+        <div className="input-box">
+          <input type="email" placeholder='email' required value={email} onChange={(e)=>setEmail(e.target.value)} />
+          <FaUser className='icon' />
+          
+        </div>
+         <div className="input-box">
+          <input type="password" placeholder='password' required  value={password} onChange={(e)=>setPassword(e.target.value)}/>
+          <FaLock  className='icon' />
+        </div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        {error &&(
+          <p className="error-message">
+            {error}
+          </p>
+        )}
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="remember-forgot">
+          <label><input type = "checkbox"/>Remember me</label>
+          <a href="#">Forgot password?</a>
+        </div>
 
-        <button type="submit">
-          Login
-        </button>
-
+        <button type="submit">Login</button>
+        <div className="register-link">
+          <p>Don't have an account? <a href="#">Register</a></p>
+        </div>
       </form>
-
     </div>
   )
 }
-export default Login
+export default LoginForm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
